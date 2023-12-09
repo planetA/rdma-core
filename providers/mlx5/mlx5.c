@@ -91,9 +91,9 @@ const struct verbs_match_ent mlx5_hca_table[] = {
 	{}
 };
 
-int mlx5_poll_delay = 0; /* usec */
-int mlx5_recv_delay = 0; /* usec */
-int mlx5_send_delay = 0; /* usec */
+struct timespec mlx5_poll_delay = {0, 0}; /* nsec */
+struct timespec mlx5_recv_delay = {0, 0}; /* nsec */
+struct timespec mlx5_send_delay = {0, 0}; /* nsec */
 
 uint32_t mlx5_debug_mask = 0;
 int mlx5_freeze_on_error_cqe;
@@ -2557,15 +2557,15 @@ bf_done:
 
 	char *poll_delay = getenv("MLX5_POLL_DELAY");
 	if (poll_delay)
-		mlx5_poll_delay = atoi(poll_delay);
+		mlx5_poll_delay.tv_nsec = atoi(poll_delay);
 
 	char *recv_delay = getenv("MLX5_RECV_DELAY");
 	if (recv_delay)
-		mlx5_recv_delay = atoi(recv_delay);
+		mlx5_recv_delay.tv_nsec = atoi(recv_delay);
 
 	char *send_delay = getenv("MLX5_SEND_DELAY");
 	if (send_delay)
-		mlx5_send_delay = atoi(send_delay);
+		mlx5_send_delay.tv_nsec = atoi(send_delay);
 	return 0;
 
 err_free_bf:

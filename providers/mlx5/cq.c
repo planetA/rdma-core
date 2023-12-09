@@ -995,7 +995,7 @@ static inline int mlx5_poll_one(struct mlx5_cq *cq,
 	return mlx5_parse_cqe(cq, cqe64, cqe, cur_rsc, cur_srq, wc, cqe_ver, 0);
 }
 
-extern int mlx5_poll_delay;
+extern struct timespec mlx5_poll_delay;
 
 static inline int poll_cq(struct ibv_cq *ibcq, int ne,
 		      struct ibv_wc *wc, int cqe_ver)
@@ -1009,8 +1009,8 @@ static inline int poll_cq(struct ibv_cq *ibcq, int ne,
 	int npolled;
 	int err = CQ_OK;
 
-	if (mlx5_poll_delay)
-		usleep(mlx5_poll_delay);
+	if (mlx5_poll_delay.tv_nsec)
+		nanosleep(&mlx5_poll_delay, NULL);
 
 	if (cq->stall_enable) {
 		if (cq->stall_adaptive_enable) {

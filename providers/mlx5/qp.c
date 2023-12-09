@@ -801,7 +801,7 @@ static inline void post_send_db(struct mlx5_qp *qp, struct mlx5_bf *bf,
 		mlx5_spin_unlock(&bf->lock);
 }
 
-extern int mlx5_send_delay;
+extern struct timespec mlx5_send_delay;
 
 static inline int _mlx5_post_send(struct ibv_qp *ibqp, struct ibv_send_wr *wr,
 				  struct ibv_send_wr **bad_wr)
@@ -828,8 +828,12 @@ static inline int _mlx5_post_send(struct ibv_qp *ibqp, struct ibv_send_wr *wr,
 	uint32_t max_tso = 0;
 	FILE *fp = to_mctx(ibqp->context)->dbg_fp; /* The compiler ignores in non-debug mode */
 
-	if (mlx5_send_delay)
-		usleep(mlx5_send_delay);
+	if (mlx5_send_delay.tv_nsec) {
+		for (unsigned step = 0; step < mlx5_send_delay.tv_nsec; step++) {
+			__asm__ __volatile__ ("" : "+g" (step) : :);
+			// nanosleep(&mlx5_send_delay, NULL);
+		}
+	}
 	mlx5_spin_lock(&qp->sq.lock);
 
 	next_fence = qp->fm_cache;
@@ -3785,7 +3789,7 @@ out:
 	return err;
 }
 
-extern int mlx5_recv_delay;
+extern struct timespec mlx5_recv_delay;
 
 int mlx5_post_recv(struct ibv_qp *ibqp, struct ibv_recv_wr *wr,
 		   struct ibv_recv_wr **bad_wr)
@@ -3798,8 +3802,8 @@ int mlx5_post_recv(struct ibv_qp *ibqp, struct ibv_recv_wr *wr,
 	int i, j;
 	struct mlx5_rwqe_sig *sig;
 
-	if (mlx5_recv_delay)
-		usleep(mlx5_recv_delay);
+	if (mlx5_recv_delay.tv_nsec)
+		nanosleep(&mlx5_recv_delay, NULL);
 	mlx5_spin_lock(&qp->rq.lock);
 
 	ind = qp->rq.head & (qp->rq.wqe_cnt - 1);
